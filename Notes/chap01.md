@@ -54,5 +54,13 @@ NoSQL(Not only SQL)，泛指非关系型的数据库。通过key-value存储。
 * `setnx key value` 只有 key 不存在时，设置 key 的值
 * `incr key` 将 key 中存储的数字值增加 1, 只能对数字值操作，如果为空，新增值为 1
 * `decr key` 将 key 中存储的数字值减少 1
-* `incrby/decrby key step` 将 key 中存储的数字值增加或减少自定义的步长
-* 
+* `incrby/decrby key step` 将 key 中存储的数字值增加或减少自定义的步长  
+* 以上操作具有 `原子性`  
+* `mset key1 value1 key2 value2...` 同时设置一个或多个 key-value 对
+* `meget key1 key2 key3...` 同时获取一个或多个value
+* `msetnx key1 value1 key2 value2...` 同时设置一个或多个 key-value 对，当且仅当所有给定 key 都不存在。有一个失败则都失败。
+* `getrange key begin end` 获取 key 对应的 value 的[begin, end]范围, 左右都是闭
+* `setrange key offset value` 设置 key 对应的 value 的 offset 位置为 value
+* `setex key EX value` 设置键值的同时设置过期时间，单位秒
+* `getset key value` 以新换旧，设置了新值同时获得旧值
+#### 列表(List)
