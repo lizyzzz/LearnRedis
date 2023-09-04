@@ -63,4 +63,31 @@ NoSQL(Not only SQL)，泛指非关系型的数据库。通过key-value存储。
 * `setrange key offset value` 设置 key 对应的 value 的 offset 位置为 value
 * `setex key EX value` 设置键值的同时设置过期时间，单位秒
 * `getset key value` 以新换旧，设置了新值同时获得旧值
-#### 列表(List)
+#### 4.3 列表(List)
+* 单键多值(同一个 key 可以对应多个 value，用 list 存储，类似 unordered_map)
+* Redis 列表就是一个双向链表，可以对头部或尾部进行插入或删除。通过索引下标的操作中间的节点性能会较差。
+* `lpush/rpush key value value ...` 从左边/右边插入一个或多个值。
+* `lpop/rpop key [count]` 从左边/右边取出 count 个值(默认是 1)`值在键在，值空键亡`。
+* `rpoplpush key1 key2` 从 key1 列表右边取出一个值并插入到 key2 列表的左边。
+* `lrange key begin end` 按照索引下标获得元素，从左到右, 左右都是闭, `0 -1` 显示所有。
+* `lindex key index` 按照索引下标获得元素(下标从0开始，从左到右)
+* `llen key` 获得列表的长度
+* `linsert key [before|after] value newvalue` 在 value 前面/后面插入新值 newvalue (从左到右)
+* `lrem key n value` 从左边开始删除 n 个 指定的 value, 返回值表示删除的个数
+* `lset key index newvalue` 将列表 key 下标为 index 的值替换成 newvalue
+* 底层数据结构: `quickList`, 首先在列表元素较少时使用一块连续的内存存储，这个结构是`ziplist`, 也即是`压缩列表`。当数据量较多时，将多个`ziplist`使用双向指针串起来使用，这样既满足了快速的插入删除性能，又不会出现太大的空间冗余(每个节点都需要一个前指针和后指针，`ziplist`内部空间连续不需要，从而节省了空间。)
+#### 4.4 集合(Set)
+* set 对外提供的功能与 list 类似，特殊之处在于 set 是可以**自动排重**的, 即元素不可重复, 并且提供了判断某个成员是否在一个 set 集合内的重要接口。
+* set 底层是 **string 类型的无序集合**。它底层是一个以 value 作为 key 的 hash 表。所以增删查改都是 O(1) 复杂度。 
+* `sadd key value1 value2...` 将一个或多个 value 加到集合 key 中，已经存在的 value 将被忽略(去重)。
+* `smembers key` 取出该集合中的所有值
+* `sismember key value` 判断集合 key 是否含有该 value 值，有返回 1，无返回 0。
+* `scard key` 返回该集合的元素个数
+* `srem key value value...` 删除集合中的一个或多个元素
+* `spop key [count]` **随机从该集合中取出count个值(默认是 1)**
+* `srandmember key n` 随即从该集合中获取 n 个值，但是不会从集合中删除
+* `smove source dest value` 把集合中一个值从一个集合移动到另一个集合
+* `sinter key1 key2` 返回两个集合的**交集**元素
+* `sunion key1 key2` 返回两个集合的**并集**元素
+* `sdiff key1 key2` 返回两个集合的**差集**元素(key1 - key2)
+* set 的底层数据结构就是**哈希表**, 类似 cpp 的 unordered_map(只有 key, value 为定值)
