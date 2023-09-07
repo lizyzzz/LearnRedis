@@ -115,4 +115,43 @@ NoSQL(Not only SQL)，泛指非关系型的数据库。通过key-value存储。
 * `zrank key member` 返回 member 在有序集合 key 中的排名, 从 0 开始
 * zset 底层数据结构包括两部分:  
     (1) hash 表: 关联元素 member 和 分数 score, 保障元素 member 的唯一性，可以通过元素 member 找到相应的 score 值; 
-    (2) 跳跃表: 跳跃表的目的在于给元素 member 排序, 根据 score 的范围获取元素列表.
+    (2) 跳跃表: 跳跃表的目的在于给元素 member 排序, 根据 score 的范围获取元素列表.、
+### 5. Redis6 配置文件详解
+* 空间单位
+```conf
+# 1k => 1000 bytes
+# 1kb => 1024 bytes
+# 1m => 1000000 bytes
+# 1mb => 1024*1024 bytes
+# 1g => 1000000000 bytes
+# 1gb => 1024*1024*1024 bytes
+```
+* 忽略大小写
+* 网络相关
+```conf
+# `bind 127.0.0.1 -::1` 默认是本机访问；
+# `port 6379` 端口号
+# tcp-backlog: 连接队列: 总和 = 未完成三次握手队列 + 已完成三次握手的队列。高backlog值(默认511) 从而避免慢客户端连接问题
+# timeout 0 (默认 0 for never)
+# tcp-keepalive 300 (心跳机制)
+```
+* `daemonize yes` 后台启动进程
+* `pidfile /var/run/redis_6379.pid` 保存进程号
+* `loglevel notice` 日志级别
+* `logfile ""` 日志路径, 默认为空
+* `database 16` 16个库
+* `requirepass foobared` 密码(默认没有)
+* `maxclients 10000` 设置 redis 客户端的最大连接数
+* `maxmemory <bytes>` 设置最大内存(内存数据库), 达到最大内存后根据内存规则移除(如LRU)
+### 6. Redis6 的发布和订阅
+* 类似 ROS 的发布订阅模式
+* Redis 客户端可以订阅任意数量的频道(channel)
+* `subscribe channel1 channel2...` 客户端订阅多个 channel 消息
+* `publish channel1 message` 客户端向 channel1 发布消息 message
+### 7. Redis6 新数据类型
+#### 7.1 位图(Bitmaps)
+* `setbit key offset value` 设置 bitmaps 中偏移量为 offset(从0开始) 的值为value(0或1)
+* **当第一次初始化 bitmaps 时，如果偏移量很大，那么整个初始化过程执行会很慢**
+* `getbit key offset` 获取 bitmaps 中偏移量为 offset(从0开始) 的值
+* `bitcount key start end [BYTE|BIT]` 统计在 [start, end] 中 1 的数量 [BYTE] 是计算字节
+* `bitop [and|or|not|xor] destkey [key1 key2...]` 对 key1 和 key2 ... 做操作后存储到 destkey
