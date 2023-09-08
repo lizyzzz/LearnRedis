@@ -155,3 +155,14 @@ NoSQL(Not only SQL)，泛指非关系型的数据库。通过key-value存储。
 * `getbit key offset` 获取 bitmaps 中偏移量为 offset(从0开始) 的值
 * `bitcount key start end [BYTE|BIT]` 统计在 [start, end] 中 1 的数量 [BYTE] 是计算字节
 * `bitop [and|or|not|xor] destkey [key1 key2...]` 对 key1 和 key2 ... 做操作后存储到 destkey
+#### 7.2 HyperLogLog
+* 多用于解决基数统计问题：`HyberLogLog`的优点是：在输入元素的数量或者体积非常大时，计算基数所需的空间总是固定的、并且是很小的。`HyberLogLog`只需要花费12 KB内存就可以计算接近 2^64 个不同元素的基数。
+* `pfadd key element1 element2...` 添加指定元素到 HyberLogLog 中
+* `pfcount key1 key2...` 统计多个 HyberLogLog 总共的近似基数
+* `pfmerge destkey srckey1 srckey2...` 将一个或多个 `HyberLogLog` 合并后的结果存放到目标 key 中
+#### 7.3 Geospatial
+&emsp;&emsp;对 GEO 类型的支持，就是地理信息的表达，可表示为元素的 2 维坐标，在地图上就是经纬度。Redis 基于该类型，提供了经纬度设置，查询，范围查询，距离查询，经纬度 Hash 等常见操作。
+* `geoadd key longtitude latitude member [longtitude latitude member...]` 添加多个地理位置(精度,维度,名称)；有效经度[-180,180], 维度[-85.05112878,85.05112878]
+* `geopos key member [member...]` 获取 key 对应的 GEO 类型值中的 member 的坐标值
+* `geodist key member1 member2 [m|km|ft|mi]` 获取两个位置之间的直线距离。单位： m(米, 默认值); km(千米); mi(英里); ft(英尺)
+* `georadius key longtitude latitude radius m|km|ft|mi` 以给定的经纬度为圆心，找出半径 radius m|km|ft|mi 内的元素。例如`georadius china:city 111 46 1000 km`
