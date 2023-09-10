@@ -378,7 +378,7 @@ exec                 // 9
 &emsp;&emsp;(2)对数据完整性和一致性要求不高更适合使用  
 &emsp;&emsp;(3)节省磁盘空间  
 &emsp;&emsp;(4)恢复速度快  
-* 持久化 rdb 的**劣势**
+* 持久化 rdb 的**劣势**  
 &emsp;&emsp;(1)Fork的时候，内存中的数据被克隆了一份，大致2倍的膨胀性需要考虑。  
 &emsp;&emsp;(2)虽然Redis在fork时使用了写时拷贝技术,但是如果数据庞大时还是比较消耗性能。  
 &emsp;&emsp;(3)在备份周期在一定间隔时间做一次备份，所以如果Redis意外down掉的话，就会丢失最后一次快照后的所有修改。  
@@ -395,21 +395,21 @@ exec                 // 9
 &emsp;&emsp;(1) appendfsync always: 始终同步，每次Redis的写入都会立刻记入日志；性能较差但数据完整性比较好.  
 &emsp;&emsp;(2) appendfsync everysec: 每秒同步，每秒记入日志一次，如果宕机，本秒的数据可能丢失。  
 &emsp;&emsp;(3) appendfsync no: redis不主动进行同步，把同步时机交给操作系统。  
-* `Rewrite 压缩`
+* `Rewrite 压缩`  
 &emsp;&emsp;AOF采用文件追加方式，文件会越来越大为避免出现此种情况，新增了重写机制, 当AOF文件的大小超过所设定的阈值时，Redis就会启动AOF文件的内容压缩， 只保留可以恢复数据的最小指令集.可以使用命令`bgrewriteaof`  
-* `Rewrite 原理`
+* `Rewrite 原理`  
 &emsp;&emsp;AOF文件持续增长而过大时，会fork出一个新进程来将文件重写(也是先写临时文件最后再rename)，redis4.0版本后的重写，就是**把 rdb 的快照**，以**二级制的形式**附在新的aof头部，作为已有的历史数据，替换掉原来的流水账操作。  
 * `no-appendfsync-on-rewrite`：如果 no-appendfsync-on-rewrite=yes ,不写入 aof 文件只写入缓存，用户请求不会阻塞，但是在这段时间如果宕机会丢失这段时间的缓存数据。（降低数据安全性，提高性能）；如果 no-appendfsync-on-rewrite=no,  还是会把数据往磁盘里刷，但是遇到重写操作，可能会发生阻塞。（数据安全，但是性能降低）
 * 何时重写  
 &emsp;&emsp;(1)Redis会记录上次重写时的AOF大小，默认配置是当AOF文件大小是上次rewrite后大小的一倍且文件大于64M时触发  
-&emsp;&emsp;(2)重写虽然可以节约大量磁盘空间，减少恢复时间。但是每次重写还是有一定的负担的，因此设定Redis要满足一定条件才会进行重写。 
+&emsp;&emsp;(2)重写虽然可以节约大量磁盘空间，减少恢复时间。但是每次重写还是有一定的负担的，因此设定Redis要满足一定条件才会进行重写。  
 &emsp;&emsp;(3)`auto-aof-rewrite-percentage`：设置重写的基准比例，文件达到100%时开始重写（文件是原来重写后文件的2倍时触发）  
 &emsp;&emsp;(4)`auto-aof-rewrite-min-size`：设置重写的基准值，最小文件64MB。达到这个值开始重写。  
-* **重写流程**
+* **重写流程**  
 &emsp;&emsp;(1)bgrewriteaof触发重写，判断是否当前有bgsave或bgrewriteaof在运行，如果有，则等待该命令结束后再继续执行。  
 &emsp;&emsp;(2)主进程fork出子进程执行重写操作，保证主进程不会阻塞。  
 &emsp;&emsp;(3)子进程遍历redis内存中数据到临时文件，客户端的写请求同时写入aof_buf缓冲区和aof_rewrite_buf重写缓冲区保证原AOF文件完整以及新AOF文件生成期间的新的数据修改动作不会丢失。  
-&emsp;&emsp;(4)1).子进程写完新的AOF文件后，向主进程发信号，父进程更新统计信息。2).主进程把aof_rewrite_buf中的数据写入到新的AOF文件。  
+&emsp;&emsp;(4) 1).子进程写完新的AOF文件后，向主进程发信号，父进程更新统计信息。2).主进程把aof_rewrite_buf中的数据写入到新的AOF文件。  
 &emsp;&emsp;(5)使用新的AOF文件覆盖旧的AOF文件，完成AOF重写。  
 ![image-6](https://github.com/lizyzzz/LearnRedis/blob/main/images/6.png)  
 * 持久化 AOF 的**优势**  
