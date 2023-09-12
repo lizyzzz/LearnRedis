@@ -424,3 +424,39 @@ exec                 // 9
 * 主机数据更新后根据配置和策略，自动同步到备机的 `master/slaver` 机制，Master以写为主，Slave以读为主。
 * 优势: (1)**读写分离，性能扩展**；(2)**容灾快速恢复**  
 ![image-7](https://github.com/lizyzzz/LearnRedis/blob/main/images/7.png)  
+#### 11.1 一主两从
+* 切入点问题？slave1、slave2是从头开始复制还是从切入点开始复制?比如从k4进来，那之前的k1,k2,k3是否也可以复制？`(全部可以复制)`
+* 从机是否可以写？set可否？`(不可以)`
+* 主机shutdown后情况如何？`(重新起后会从从机同步数据)`从机是上位还是原地待命？`(原地待命)`
+* 主机又回来了后，主机新增记录，从机还能否顺利复制？`(可以)` 
+* 其中一台从机down后情况如何？依照原有它能跟上大部队吗？`(可以)`  
+![image-8](https://github.com/lizyzzz/LearnRedis/blob/main/images/8.png)  
+#### 11.2 复制原理
+* Slave启动成功连接到master后会发送一个sync命令
+* Master接到命令启动后台的存盘进程，同时收集所有接收到的用于修改数据集命令， 在后台进程执行完毕之后，master将传送整个数据文件到slave,以完成一次完全同步
+* 全量复制：而slave服务在接收到数据库文件数据后，将其存盘并加载到内存中。
+* 增量复制：Master继续将新的所有收集到的修改命令依次传给slave,完成同步
+* 但是只要是重新连接master,一次完全同步(全量复制)将被自动执行
+#### 11.3 薪火相传
+* 上一个Slave可以是下一个slave的Master，Slave同样可以接收其他 slaves的连接和同步请求，那么该slave作为了链条中下一个的master, 可以有效减轻master的写压力(向从机的写操作),去中心化降低风险。
+* 用 slaveof  <ip><port>
+* 中途变更转向:会清除之前的数据，重新建立拷贝最新的风险是一旦某个slave宕机，后面的slave都没法备份
+* 主机挂了，从机还是从机，无法写数据了  
+![image-9](https://github.com/lizyzzz/LearnRedis/blob/main/images/9.png)  
+#### 11.4 反客为主
+* 当一个master宕机后，后面的slave可以立刻升为master，其后面的slave不用做任何修改。
+* 用 `slaveof no one` 将从机变为主机。
+#### 11.5 哨兵模式
+* 反客为主的自动版，能够后台监控主机是否故障，如果故障了根据投票数自动将从库转换为主库
+* 配置哨兵 `sentinel.conf`,填写内容`sentinel monitor mymaster 127.0.0.1 6379 1`, 其中mymaster为监控对象起的服务器名称, **1 为至少有多少个哨兵同意迁移的数量**。
+* 执行`redis-sentinel /myredis/sentinel.conf`
+* 当主机挂掉，从机选举中产生新的主机(大概10秒左右可以看到哨兵窗口日志，切换了新的主机)哪个从机会被选举为主机呢？根据优先级别: `slave-priority`, 原主机重启后会变为从机。  
+![image-10](https://github.com/lizyzzz/LearnRedis/blob/main/images/10.png)  
+* 复制延时  
+&emsp;&emsp;由于所有的写操作都是先在 Master上操作，然后同步更新到 Slave 上，所以从 Master 同步到 Slave 机器有一定的延迟，当系统很繁忙的时候，延迟问题会更加严重，Slave机器数量的增加也会使这个问题更加严重。  
+* 故障修复过程  
+&emsp;&emsp;(1) 从下线的主服务的所有从服务里挑选一个从服务，将其转成主服务，选择条件依次为：**(a) 选择优先级靠前的(`redis.conf`中的`replica-priority 100`, 值越小优先级越高)**; **(b) 选择偏移量最大的(偏移量是指获得原主机数据最全的)**; **(c) 选择 runid 最小的从服务(每个redis实例启动后都会随机生成一个 40 位的 runid)**  
+&emsp;&emsp;(2) 挑选出新的主服务之后, **sentinel 向`原主服务的从服务`发送 `slaveof 新的主服务`的命令**, 完成复制新 master.  
+&emsp;&emsp;(3) 当已下线的服务重新上线时, sentinel 会向其发送 slaveof 命令, 让其成为新主服务的从服务。  
+### 12. Redis 集群
+
