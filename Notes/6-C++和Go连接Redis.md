@@ -37,7 +37,7 @@ int main() {
 }
 ```
 * Go 语言包 `github.com/go-redis/redis`
-```Go
+```Golang
 package main
 
 import (
@@ -46,7 +46,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -100,7 +100,7 @@ func (pv *PhoneVerify) Close() {
 func (pv *PhoneVerify) CheckVerifyCode(phone, code string) bool {
 	// code key
 	var codeKey string = "VerifyCode" + phone + ":code"
-	redisCode, _ := pv.client.Get(codeKey).Result()
+	redisCode, _ := pv.client.Get(context.Background(), codeKey).Result()
 	if redisCode == code {
 		return true
 	} else {
@@ -114,12 +114,12 @@ func (pv *PhoneVerify) GenVerifyCode(phone string) {
 	// code key
 	var codeKey string = "VerifyCode" + phone + ":code"
 
-	count, _ := pv.client.Get(countKey).Result()
+	count, _ := pv.client.Get(context.Background(), countKey).Result()
 	cnt, _ := strconv.Atoi(count)
 	if count == "" {
-		pv.client.Set(countKey, 1, time.Duration(time.Duration(24*60*60).Seconds()))
+		pv.client.Set(context.Background(), countKey, 1, time.Duration(time.Duration(24*60*60).Seconds()))
 	} else if cnt <= 2 {
-		pv.client.Incr(countKey)
+		pv.client.Incr(context.Background(), countKey)
 	} else if cnt > 2 {
 		fmt.Println("this day can't send again")
 		return
@@ -127,7 +127,7 @@ func (pv *PhoneVerify) GenVerifyCode(phone string) {
 
 	// set code key
 	vcode := pv.GetCode()
-	pv.client.Set(codeKey, vcode, time.Duration(time.Duration(120).Seconds()))
+	pv.client.Set(context.Background(), codeKey, vcode, time.Duration(time.Duration(120).Seconds()))
 }
 
 func (pv *PhoneVerify) GetCode() string {
