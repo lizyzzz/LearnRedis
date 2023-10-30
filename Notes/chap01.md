@@ -356,7 +356,7 @@ incrby balance 100   // 8
 exec                 // 9
 // (nil)
 ```
-* `UNWATCH` 取消 WATCH 命令对所有 key 的监视。如果在执行 WATCH 命令之后，EXEC 命令或DISCARD 命令先被执行了的话，那么就不需要再执行UNWATCH 了。
+* `UNWATCH` 取消 WATCH 命令对所有 key 的监视。如果在执行 WATCH 命令之后，EXEC 命令或 DISCARD 命令先被执行了的话，那么就不需要再执行 UNWATCH 了。
 #### 9.4 Redis 事务三大特性
 * 单独的隔离操作  
 &emsp;&emsp;事务中的所有命令都会序列化、按顺序地执行。事务在执行的过程中，不会被其他客户端发送来的命令请求所打断。 
@@ -371,7 +371,8 @@ exec                 // 9
 * 备份的执行原理  
 &emsp;&emsp;Redis会单独创建（fork）一个子进程来进行持久化，会先将数据写入到 **一个临时文件中**，待持久化过程都结束了，再用这个**临时文件替换上次持久化好的文件**。 整个过程中，主进程是不进行任何IO操作的，这就确保了极高的性能 如果需要进行大规模数据的恢复，且对于数据恢复的完整性不是非常敏感，那RDB方式要比AOF方式更加的高效。**RDB的缺点是最后一次持久化后的数据可能丢失**。  
 ![image-4](https://github.com/lizyzzz/LearnRedis/blob/main/images/4.png)  
-* `save` ：save时只管保存，其它不管，全部阻塞。手动保存。不建议。
+* `save` ：(**操作**) save时只管保存，其它不管，全部阻塞。手动保存。不建议。
+* `save` ：(**参数**) save 3600 1(3600s内改变1次) save 300 100(300s内改变100次) save 60 10000(60s内改变10000次), 满足上述条件会执行 `bgsave` 操作 
 * `bgsave`：Redis会在后台异步进行快照操作，快照同时还可以响应客户端请求。可以通过 `lastsave` 命令获取最后一次成功执行快照的时间
 * 持久化 rdb 的**优势**  
 &emsp;&emsp;(1)适合大规模的数据恢复  
@@ -439,8 +440,8 @@ exec                 // 9
 * 但是只要是重新连接master,一次完全同步(全量复制)将被自动执行
 #### 11.3 薪火相传
 * 上一个Slave可以是下一个slave的Master，Slave同样可以接收其他 slaves的连接和同步请求，那么该slave作为了链条中下一个的master, 可以有效减轻master的写压力(向从机的写操作),去中心化降低风险。
-* 用 slaveof  <ip><port>
-* 中途变更转向:会清除之前的数据，重新建立拷贝最新的风险是一旦某个slave宕机，后面的slave都没法备份
+* 用 `slaveof  &lt;ip&gt; &lt;port&gt;` 可以把 &lt;ip&gt; &lt;port&gt; 作为该机器的主机。
+* 中途变更转向:会清除之前的数据，重新建立拷贝最新的; 风险是一旦某个slave宕机，后面的slave都没法备份
 * 主机挂了，从机还是从机，无法写数据了  
 ![image-9](https://github.com/lizyzzz/LearnRedis/blob/main/images/9.png)  
 #### 11.4 反客为主
