@@ -116,8 +116,18 @@ func (s *SeqServer) SeqKill(userId int) int {
 	cargoKey := s.cargoName + ":count"
 
 	txf := func(tx *redis.Tx) error {
+		// 这里执行的redis命令是
+		/*
+			watch cargokey successKey
+			sismember successKey userId
+			get cargokey
+			multi
+			decr cargokey
+			exec
+		*/
+
 		// check has kill
-		hasKill := s.client.SIsMember(s.successKey, userId).Val()
+		hasKill := tx.SIsMember(s.successKey, userId).Val()
 		if hasKill {
 			return fmt.Errorf("userId has seqKill")
 		}
@@ -141,7 +151,7 @@ func (s *SeqServer) SeqKill(userId int) int {
 		return err
 	}
 	// watch and exec
-	err := s.client.Watch(txf, cargoKey)
+	err := s.client.Watch(txf, cargoKey, s.successKey)
 	if err == redis.TxFailedErr {
 		return 0
 	} else if err != nil {
